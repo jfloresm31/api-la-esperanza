@@ -38,11 +38,17 @@ app.get('/api/productos', async (req, res) => {
 // 3. COMPRAR (Ahora guarda el detalle de cada producto)
 app.post('/api/checkout', async (req, res) => {
     try {
-        const { id_cliente, tipo_entrega, metodo_pago, carrito } = req.body;
+        const { id_cliente, tipo_entrega, metodo_pago, carrito, ubicacion_especifica } = req.body;
         const conexion = await mysql.createConnection(dbConfig);
         await conexion.beginTransaction();
 
         const token = Math.random().toString(36).substring(2, 8).toUpperCase();
+        
+        // Guardar pedido con la ubicación real
+        const [resultPedido] = await conexion.execute(
+            'INSERT INTO pedido (id_cliente, tipo_entrega, metodo_pago, total, token_digital, estado, ubicacion) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [id_cliente, tipo_entrega, metodo_pago, 0, token, 'Preparando', ubicacion_especifica || 'Bodega Central']
+        );
         
         // Crear cabecera del pedido
         const [resultPedido] = await conexion.execute(
