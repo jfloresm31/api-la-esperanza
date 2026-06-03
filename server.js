@@ -187,7 +187,38 @@ app.post('/api/registro', async (req, res) => {
         res.status(500).json({ error: 'Error al registrar la cuenta en la base de datos.' }); 
     }
 });
+// ==========================================
+// 9. AGREGAR PRODUCTOS A UN PEDIDO EXISTENTE
+// ==========================================
+app.post('/api/agregar-a-pedido', async (req, res) => {
+    try {
+        const { id_pedido, carrito } = req.body;
+        const conexion = await mysql.createConnection(dbConfig);
+        await conexion.beginTransaction();
 
+        for (let item of carrito) {
+            // 1. Restar del inventario general
+            await conexion.execute('UPDATE producto SET stock_disponible = stock_disponible - ? WHERE id_producto = ?', [item.cantidad, item.id_producto]);
+            
+            // 2. Revisar si el producto ya estaba en la factura original
+            const [rows] = await conexion.execute('SELECT * FROM pedido_detalle WHERE id_pedido = ? AND id_producto = ?', [id_pedido, item.id_producto]);
+            
+            if (rows.length > 0) {
+                // Si ya había pedido este producto, solo le sumamos la nueva cantidad
+                await conexion.execute('UPDATE pedido_detalle SET cantidad = cantidad + ? WHERE id_pedido = ? AND id_producto = ?', [item.cantidad, id_pedido, item.id_producto]);
+            } else {
+                // Si es un producto nuevo, lo insertamos en la factura
+                await conexion.execute('INSERT INTO pedido_detalle (id_pedido, id_producto, cantidad) VALUES (?, ?, ?)', [id_pedido, item.id_producto, item.cantidad]);
+            }
+        }
+
+        await conexion.commit();
+        await conexion.end();
+        res.json({ exito: true, mensaje: 'Productos agregados a la orden exitosamente.' });
+    } catch (error) { 
+        res.status(500).json({ error: 'Error al agregar productos al pedido.' }); 
+    }
+});
 // ==========================================
 // INICIO DEL SERVIDOR
 // ==========================================
