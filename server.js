@@ -130,7 +130,33 @@ app.post('/api/editar-pedido', async (req, res) => {
         res.status(500).json({ error: 'Error al editar el pedido.' }); 
     }
 });
-
+// ==========================================
+// 8. REGISTRAR NUEVA CUENTA DE CLIENTE
+// ==========================================
+app.post('/api/registro', async (req, res) => {
+    try {
+        const { nombre, correo, password } = req.body;
+        const conexion = await mysql.createConnection(dbConfig);
+        
+        // 1. Validar que el correo no exista ya en la base de datos
+        const [existe] = await conexion.execute('SELECT * FROM cliente WHERE correo = ?', [correo]);
+        if (existe.length > 0) {
+            await conexion.end();
+            return res.status(400).json({ error: 'Este correo ya tiene una cuenta registrada.' });
+        }
+        
+        // 2. Crear al nuevo cliente
+        await conexion.execute(
+            'INSERT INTO cliente (nombre, correo, password, direccion, nivel_tecnologico) VALUES (?, ?, ?, ?, ?)',
+            [nombre, correo, password, 'No especificada', 'Básico']
+        );
+        
+        await conexion.end();
+        res.json({ exito: true, mensaje: '¡Cuenta creada con éxito! Ya puedes iniciar sesión.' });
+    } catch (error) { 
+        res.status(500).json({ error: 'Error al registrar la cuenta en el servidor.' }); 
+    }
+});
 const PORT = process.env.PORT || 3000;
 // ==========================================
 // 7. OBTENER MIS PEDIDOS Y RASTREO
