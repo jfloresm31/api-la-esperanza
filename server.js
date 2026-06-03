@@ -104,9 +104,30 @@ app.post('/api/cancelar-pedido', async (req, res) => {
     } catch (error) { res.status(500).json({ error: 'Error al cancelar.' }); }
 });
 
+// ==========================================
+// 6. EDITAR PEDIDO (CAMBIAR TIPO DE ENTREGA)
+// ==========================================
+app.post('/api/editar-pedido', async (req, res) => {
+    try {
+        const { id_pedido, nuevo_tipo_entrega } = req.body;
+        const conexion = await mysql.createConnection(dbConfig);
+        
+        // Solo permitimos editar si el pedido sigue en estado "Preparando"
+        await conexion.execute(
+            "UPDATE pedido SET tipo_entrega = ? WHERE id_pedido = ? AND estado = 'Preparando'",
+            [nuevo_tipo_entrega, id_pedido]
+        );
+        
+        await conexion.end();
+        res.json({ exito: true, mensaje: 'Método de entrega actualizado con éxito.' });
+    } catch (error) { 
+        res.status(500).json({ error: 'Error al editar el pedido.' }); 
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 // ==========================================
-// 6. OBTENER MIS PEDIDOS Y RASTREO
+// 7. OBTENER MIS PEDIDOS Y RASTREO
 // ==========================================
 app.get('/api/mis-pedidos/:id', async (req, res) => {
     try {
