@@ -145,15 +145,16 @@ app.post('/api/registro', async (req, res) => {
             return res.status(400).json({ error: 'Este correo ya tiene una cuenta registrada.' });
         }
         
-        // 2. Crear al nuevo cliente
+        // 2. Crear al nuevo cliente (CORREGIDO: Solo enviamos columnas que sí existen)
         await conexion.execute(
-            'INSERT INTO cliente (nombre, correo, password, direccion, nivel_tecnologico) VALUES (?, ?, ?, ?, ?)',
-            [nombre, correo, password, 'No especificada', 'Básico']
+            'INSERT INTO cliente (nombre, correo, password) VALUES (?, ?, ?)',
+            [nombre, correo, password]
         );
         
         await conexion.end();
         res.json({ exito: true, mensaje: '¡Cuenta creada con éxito! Ya puedes iniciar sesión.' });
     } catch (error) { 
+        console.error(error); // Esto te ayudará a ver el error real en los logs de Render
         res.status(500).json({ error: 'Error al registrar la cuenta en el servidor.' }); 
     }
 });
