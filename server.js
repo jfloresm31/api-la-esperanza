@@ -105,4 +105,20 @@ app.post('/api/cancelar-pedido', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+// ==========================================
+// 6. OBTENER MIS PEDIDOS Y RASTREO
+// ==========================================
+app.get('/api/mis-pedidos/:id', async (req, res) => {
+    try {
+        const conexion = await mysql.createConnection(dbConfig);
+        const [filas] = await conexion.execute(
+            'SELECT * FROM pedido WHERE id_cliente = ? ORDER BY id_pedido DESC', 
+            [req.params.id]
+        );
+        await conexion.end();
+        res.json(filas);
+    } catch (error) { 
+        res.status(500).json({ error: 'Error al obtener el historial de pedidos.' }); 
+    }
+});
 app.listen(PORT, () => console.log(`🚀 API corriendo en el puerto ${PORT}`));
